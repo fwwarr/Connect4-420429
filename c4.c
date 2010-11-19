@@ -11,13 +11,19 @@
 #include <string.h>
 #include <pthread.h>
 #include <assert.h>
+#include <math.h>
+
+typedef struct {
+	int col;
+	float value;
+}  searchResult;
 
 int printMatrix(int[10][7]);
 int play(int[10][7], int, int);
 int getMove(int, int);
 void* multiCalc(void*);
-int calcMove(int[10][7], int, int);
-int analyzeMove(int[10][7], int, int, int);
+searchResult calcMove(int[10][7], int, int);
+float analyzeMove(int[10][7], int, int, int);
 int undo(int[10][7], int);
 
 int NUM_THREADS = 1;
@@ -34,8 +40,10 @@ int grid[10][7] =   {
 			{0, 0, 0, 0, 0, 0, 0}};
 int p = 1; //The current player
 int best;	// Holder for best move
-int bestVal;// Holder for best move value
+float bestVal = -INFINITY;// Holder for best move value
 int searchDepth = 2;  	//Search depth to use for AI
+
+
 
 int main(int argc, char *argv[]){
 	printf ("Welcome to Connect4-420429\n");
@@ -106,7 +114,15 @@ int main(int argc, char *argv[]){
 			rc = pthread_join(threads[i], NULL);
 			assert(0 == rc);
 		}
+		
+		printf("Combined best result is move %d with value %f\n", best, bestVal);
+		// Do stuff 
+		
 
+
+		// Reset values for next turn
+		best = 0;
+		bestVal = -INFINITY;
 
 
 	}
@@ -233,21 +249,25 @@ void *multiCalc(void *argument) {
 
 	int tid;
 	tid = *((int *) argument);
-
-	int b = 0;
 	
-	b = calcMove(grid, p, tid);
+	searchResult sr = calcMove(grid, p, tid);
 
-	printf("Processor %d's best result is move %d\n", tid, b);
-	
+	if (sr.value > bestVal) {
+		bestVal = sr.value;
+		best = sr.col;
 	}
+	
+	//if (b > bestVal)
+	printf("Processor %d's best result is move %d with value %f\n", tid, sr.col, sr.value);
+	
+}
 
 //Calculates the 'best' possible move
-int calcMove(int m[10][7], int p, int tid){
+searchResult calcMove(int m[10][7], int p, int tid){
 	
 	printf("\n");
 	int a = 0;//value of current move
-	int v = 0;//value of best move
+	float v = -INFINITY;//value of best move
 	int b = 0;//best move
 	int c = 0;//column
 	int m2[10][7];
@@ -258,7 +278,7 @@ int calcMove(int m[10][7], int p, int tid){
 		if (c%NUM_THREADS == tid) {
 			a = analyzeMove(m2,p,c,0);
 			if(c==0) v = a;
-			printf("Value of move in column %d: %d\n", c, a);
+			//printf("Value of move in column %d: %d\n", c, a);
 			if (a > v){
 				v = a;
 				b = c;
@@ -267,12 +287,13 @@ int calcMove(int m[10][7], int p, int tid){
 		
 	}
 	//printf("The best move is %d\n", b);
-	return b;
+	searchResult result = {b, v};
+	return result;
 }
 
-int analyzeMove(int m[10][7], int p, int c, int ply){
+float analyzeMove(int m[10][7], int p, int c, int ply){
 
-	int v = 0;//Value of current move
+	float v = 0;//Value of current move
 
 	//Limit search depth
 	if(ply > searchDepth){
