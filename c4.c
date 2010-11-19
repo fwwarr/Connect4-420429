@@ -23,7 +23,7 @@ int play(int[10][7], int, int);
 int getMove(int, int);
 void* multiCalc(void*);
 searchResult calcMove(int[10][7], int, int);
-float analyzeMove(int[10][7], int, int, int);
+float analyzeMove(int[10][7], int, int, int, int);
 int undo(int[10][7], int);
 
 int NUM_THREADS = 1;
@@ -40,7 +40,7 @@ int grid[10][7] =   {
 			{0, 0, 0, 0, 0, 0, 0}};
 int p = 1; //The current player
 
-float moveVals[7];
+float moveVals[7] = {0,0,0,0,0,0,0};
 
 int searchDepth = 2;  	//Search depth to use for AI
 
@@ -263,7 +263,7 @@ void *multiCalc(void *argument) {
 	
 	searchResult sr = calcMove(grid, p, tid);
 	
-	moveVals[sr.col] = sr.value;
+	moveVals[sr.col] += sr.value;
 	
 	//printf("Processor %d's best result is move %d with value %f\n", tid, sr.col, sr.value);
 	
@@ -272,7 +272,6 @@ void *multiCalc(void *argument) {
 //Calculates the 'best' possible move
 searchResult calcMove(int m[10][7], int p, int tid){
 	
-	printf("\n");
 	int a = 0;//value of current move
 	float v = -INFINITY;//value of best move
 	int b = 0;//best move
@@ -282,8 +281,8 @@ searchResult calcMove(int m[10][7], int p, int tid){
 
 	for(;c < 7; c++){
 	
-		if (c%NUM_THREADS == tid) {
-			a = analyzeMove(m2,p,c,0);
+		if (c%NUM_THREADS == tid%7) {
+			a = analyzeMove(m2,p,c,0, tid);
 			if(c==0) v = a;
 			//printf("Value of move in column %d: %d\n", c, a);
 			if (a > v){
@@ -298,7 +297,20 @@ searchResult calcMove(int m[10][7], int p, int tid){
 	return result;
 }
 
-float analyzeMove(int m[10][7], int p, int c, int ply){
+float analyzeMove(int m[10][7], int p, int c, int ply, int tid){
+
+	int numProc = 1;
+	if (ply == 0) {
+		// How many processes are running on this branch?
+		if (NUM_THREADS > 7) {
+			numProc = NUM_THREADS/7;
+			if (NUM_THREADS%7 > c) {
+				numProc++;
+			}
+		}
+	}
+	
+	
 
 	float v = 0;//Value of current move
 
@@ -323,7 +335,9 @@ float analyzeMove(int m[10][7], int p, int c, int ply){
 		ply++;
 
 		for(;i < 7; i++){
-			a += analyzeMove(m,p%2+1,i,ply);
+			if ( (i%numProc == tid/7) || (numProc == 1) ) {
+				a += analyzeMove(m,p%2+1,i,ply, tid);
+			}
 		}
 		undo(m,c);
 		return v*7*7+a;//Extra multiplications to add weight to sooner c4s.
