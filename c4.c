@@ -9,17 +9,19 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <pthread.h>
+#include <assert.h>
 
 int printMatrix(int[10][7]);
 int play(int[10][7], int, int);
 int getMove(int, int);
-int calcMove(int[10][7], int);
+void* multiCalc(void*);
+int calcMove(int[10][7], int, int);
 int analyzeMove(int[10][7], int, int, int);
 int undo(int[10][7], int);
 
-int main(int argc, char *argv[]){
-	printf ("Welcome to Connect4-420429\n");
-	int grid[10][7] =   {
+int NUM_THREADS = 1;
+int grid[10][7] =   {
 			{0, 0, 0, 0, 0, 0, 0},
 			{0, 0, 0, 0, 0, 0, 0},
 			{0, 0, 0, 0, 0, 0, 0},
@@ -30,9 +32,15 @@ int main(int argc, char *argv[]){
 			{0, 0, 0, 0, 0, 0, 0},
 			{0, 0, 0, 0, 0, 0, 0},
 			{0, 0, 0, 0, 0, 0, 0}};
+int p = 1; //The current player
+int best;	// Holder for best move
+int bestVal;// Holder for best move value
+
+int main(int argc, char *argv[]){
+	printf ("Welcome to Connect4-420429\n");
 
 	char mode = 'c';
-
+	int i;
 	if(argc>1){
 		mode = argv[1][0];
 	}
@@ -53,9 +61,14 @@ int main(int argc, char *argv[]){
 		break;
 	}
 
+
+	if (argc>2){
+		NUM_THREADS = strtod(argv[2], NULL);
+	}
+
+
 	srand(time(NULL));//Seeding the random number generator
 
-	int p = 1; //The current player
 	int w = 0; //The outcome of a move (positive: player wins, 0: OK, -1: invalid move)
 	int c = 0; //The current move, i.e. the column the token was dropped in
 	int m = 0; //The number of moves played so far
@@ -70,7 +83,27 @@ int main(int argc, char *argv[]){
 		printMatrix(grid);
 		p = p%2 + 1;
 		m++;
-		calcMove(grid,p);
+
+		// MULTI-PROCESSING SETUP - Calculate best move
+		pthread_t threads[NUM_THREADS];
+		int thread_args[NUM_THREADS];
+	
+		int rc, i;
+		
+		//Create Threads
+		for (i=0; i<NUM_THREADS; ++i) {
+			thread_args[i] = i;
+			rc = pthread_create(&threads[i], NULL, multiCalc, (void *) &thread_args[i]);
+			assert(0 == rc);
+		}
+		//Wait for all threads to complete
+		for (i=0; i<NUM_THREADS; ++i) {
+			rc = pthread_join(threads[i], NULL);
+			assert(0 == rc);
+		}
+
+
+
 	}
 	if(w > 0){
 		printf("\nPlayer %d has won!\n", w);
@@ -191,9 +224,22 @@ int getMove(int p, int mode){
 	return c;
 }
 
-//Calculates the 'best' possible move
-int calcMove(int m[10][7], int p){
+void *multiCalc(void *argument) {
 
+	int tid;
+	tid = *((int *) argument);
+
+	int b = 0;
+	
+	b = calcMove(grid, p, tid);
+
+	printf("Processor %d's best result is move %d\n", tid, b);
+	
+	}
+
+//Calculates the 'best' possible move
+int calcMove(int m[10][7], int p, int tid){
+	
 	printf("\n");
 	int a = 0;//value of current move
 	int v = 0;//value of best move
@@ -203,15 +249,19 @@ int calcMove(int m[10][7], int p){
 	memcpy(m2,m,sizeof(m2));
 
 	for(;c < 7; c++){
-		a = analyzeMove(m2,p,c,0);
-		if(c==0) v = a;
-		printf("Value of move in column %d: %d\n", c, a);
-		if (a > v){
-			v = a;
-			b = c;
+	
+		if (c%NUM_THREADS == tid) {
+			a = analyzeMove(m2,p,c,0);
+			if(c==0) v = a;
+			printf("Value of move in column %d: %d\n", c, a);
+			if (a > v){
+				v = a;
+				b = c;
+			}
 		}
+		
 	}
-	printf("The best move is %d\n", b);
+	//printf("The best move is %d\n", b);
 	return b;
 }
 
