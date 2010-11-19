@@ -39,8 +39,9 @@ int grid[10][7] =   {
 			{0, 0, 0, 0, 0, 0, 0},
 			{0, 0, 0, 0, 0, 0, 0}};
 int p = 1; //The current player
-int best;	// Holder for best move
-float bestVal = -INFINITY;// Holder for best move value
+
+float moveVals[7];
+
 int searchDepth = 2;  	//Search depth to use for AI
 
 
@@ -85,6 +86,10 @@ int main(int argc, char *argv[]){
 	int w = 0; //The outcome of a move (positive: player wins, 0: OK, -1: invalid move)
 	int c = 0; //The current move, i.e. the column the token was dropped in
 	int m = 0; //The number of moves played so far
+	
+	int bestMove;
+	float bestMoveVal;
+	int k = 0;
 
 	while(w == 0 && m < 70){
 
@@ -115,14 +120,20 @@ int main(int argc, char *argv[]){
 			assert(0 == rc);
 		}
 		
-		printf("Combined best result is move %d with value %f\n", best, bestVal);
-		// Do stuff 
+		bestMove = -1;
+		bestMoveVal = -INFINITY;
+		k = 0;
+		printf("Array results\n");
+		for (; k < 7; k++) {
+			printf("Col %d: val = %f\n", k, moveVals[k]);
+			if (moveVals[k] > bestMoveVal) {
+				bestMoveVal = moveVals[k];
+				bestMove = k;
+			}
+		}
 		
-
-
-		// Reset values for next turn
-		best = 0;
-		bestVal = -INFINITY;
+		printf("Reccomended Move: %d\n", bestMove);
+		// Do stuff 
 
 
 	}
@@ -251,14 +262,10 @@ void *multiCalc(void *argument) {
 	tid = *((int *) argument);
 	
 	searchResult sr = calcMove(grid, p, tid);
-
-	if (sr.value > bestVal) {
-		bestVal = sr.value;
-		best = sr.col;
-	}
 	
-	//if (b > bestVal)
-	printf("Processor %d's best result is move %d with value %f\n", tid, sr.col, sr.value);
+	moveVals[sr.col] = sr.value;
+	
+	//printf("Processor %d's best result is move %d with value %f\n", tid, sr.col, sr.value);
 	
 }
 
