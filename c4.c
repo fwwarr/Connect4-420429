@@ -35,6 +35,7 @@ int grid[10][7] =   {
 int p = 1; //The current player
 int best;	// Holder for best move
 int bestVal;// Holder for best move value
+int searchDepth = 2;  	//Search depth to use for AI
 
 int main(int argc, char *argv[]){
 	printf ("Welcome to Connect4-420429\n");
@@ -64,6 +65,10 @@ int main(int argc, char *argv[]){
 
 	if (argc>2){
 		NUM_THREADS = strtod(argv[2], NULL);
+	}
+	
+	if (argc>3) {
+		searchDepth = strtod(argv[3], NULL);
 	}
 
 
@@ -270,7 +275,7 @@ int analyzeMove(int m[10][7], int p, int c, int ply){
 	int v = 0;//Value of current move
 
 	//Limit search depth
-	if(ply > 2){
+	if(ply > searchDepth){
 		return v;
 	}
 	else {
