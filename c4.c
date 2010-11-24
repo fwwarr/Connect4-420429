@@ -26,7 +26,7 @@ searchResult calcMove(int[10][7], int, int);
 float analyzeMove(int[10][7], int, int, int, int);
 int undo(int[10][7], int);
 
-int NUM_THREADS = 1;
+int NUM_THREADS = 7;
 int grid[10][7] =   {
 			{0, 0, 0, 0, 0, 0, 0},
 			{0, 0, 0, 0, 0, 0, 0},
@@ -42,7 +42,7 @@ int p = 1; //The current player
 
 float moveVals[7] = {0,0,0,0,0,0,0};
 
-int searchDepth = 2;  	//Search depth to use for AI
+int searchDepth = 4;  	//Search depth to use for AI
 
 
 
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]){
 	printf ("Welcome to Connect4-420429\n");
 
 	char mode = 'c';
-	int i;
+
 	if(argc>1){
 		mode = argv[1][0];
 	}
@@ -102,6 +102,11 @@ int main(int argc, char *argv[]){
 		p = p%2 + 1;
 		m++;
 
+
+		clock_t start, end;
+		double elapsed;
+		start = clock();
+
 		// MULTI-PROCESSING SETUP - Calculate best move
 		pthread_t threads[NUM_THREADS];
 		int thread_args[NUM_THREADS];
@@ -120,6 +125,10 @@ int main(int argc, char *argv[]){
 			assert(0 == rc);
 		}
 		
+
+		end = clock();
+		elapsed = ((double)(end - start)*1000.0)/ CLOCKS_PER_SEC;
+
 		bestMove = -1;
 		bestMoveVal = -INFINITY;
 		k = 0;
@@ -132,7 +141,10 @@ int main(int argc, char *argv[]){
 			}
 		}
 		
-		printf("Reccomended Move: %d\n", bestMove);
+		printf("Recommended Move: %d\n", bestMove);
+
+		printf("Calculation took %d ms using %d threads.",(int)elapsed,NUM_THREADS);
+
 		// Do stuff 
 
 
@@ -263,7 +275,7 @@ void *multiCalc(void *argument) {
 	
 	searchResult sr = calcMove(grid, p, tid);
 	
-	moveVals[sr.col] += sr.value;
+	moveVals[sr.col] = sr.value;
 	
 	//printf("Processor %d's best result is move %d with value %f\n", tid, sr.col, sr.value);
 	
@@ -321,13 +333,14 @@ float analyzeMove(int m[10][7], int p, int c, int ply, int tid){
 	else {
 
 		int w = play(m,p,c);
+		double mult =  pow(10, (searchDepth - ply));
 
 		if(w == p){
-			v = v - (ply%2*2-1)*7;
+			v = v - (ply%2*2-1)*mult;
 		} else if (w > 0){
-			v = v + (ply%2*2-1)*7;
+			v = v + (ply%2*2-1)*mult;
 		} else if (w == -1){
-			return v;//Invalid move
+			return (ply==0)?-INFINITY:v;//Invalid move
 		}
 
 		int i = 0;
@@ -340,7 +353,7 @@ float analyzeMove(int m[10][7], int p, int c, int ply, int tid){
 			}
 		}
 		undo(m,c);
-		return v*7*7+a;//Extra multiplications to add weight to sooner c4s.
+		return v+a;
 	}
 }
 
