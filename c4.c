@@ -26,7 +26,7 @@ searchResult calcMove(int[10][7], int, int);
 float analyzeMove(int[10][7], int, int, int, int);
 int undo(int[10][7], int);
 
-int NUM_THREADS = 7;
+int NUM_THREADS = 10;
 int grid[10][7] =   {
 			{0, 0, 0, 0, 0, 0, 0},
 			{0, 0, 0, 0, 0, 0, 0},
@@ -42,7 +42,7 @@ int p = 1; //The current player
 
 float moveVals[7] = {0,0,0,0,0,0,0};
 
-int searchDepth = 4;  	//Search depth to use for AI
+int searchDepth = 8;  	//Search depth to use for AI
 
 
 
@@ -102,6 +102,9 @@ int main(int argc, char *argv[]){
 		p = p%2 + 1;
 		m++;
 
+		for(k = 0; k<7; k++){
+			moveVals[k] = 0;
+		}
 
 		clock_t start, end;
 		double elapsed;
@@ -275,7 +278,7 @@ void *multiCalc(void *argument) {
 	
 	searchResult sr = calcMove(grid, p, tid);
 	
-	moveVals[sr.col] = sr.value;
+	moveVals[sr.col] += sr.value;
 	
 	//printf("Processor %d's best result is move %d with value %f\n", tid, sr.col, sr.value);
 	
