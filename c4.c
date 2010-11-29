@@ -39,7 +39,7 @@ int grid[10][7] =   {
 			{0, 0, 0, 0, 0, 0, 0},
 			{0, 0, 0, 0, 0, 0, 0}};
 int p = 1; //The current player
-
+int bestMove;
 float moveVals[7] = {0,0,0,0,0,0,0};
 
 int searchDepth = 8;  	//Search depth to use for AI
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]){
 	int c = 0; //The current move, i.e. the column the token was dropped in
 	int m = 0; //The number of moves played so far
 	
-	int bestMove;
+
 	float bestMoveVal;
 	int k = 0;
 
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]){
 
 	}
 	if(w > 0){
-		printf("\nPlayer %d has won!\n", w);
+		printf("\nPlayer %d has won in %d moves\n", w, m);
 	} else {
 		printf("\nGame ended in a tie.\n");
 	}
@@ -260,6 +260,8 @@ int getMove(int p, int mode){
 
 	int c;
 	switch (mode) {
+	case 'a':
+		c = bestMove;
 	case 'r':
 		c = rand()%7;
 		break;
