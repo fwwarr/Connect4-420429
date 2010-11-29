@@ -39,7 +39,7 @@ int grid[10][7] =   {
 			{0, 0, 0, 0, 0, 0, 0},
 			{0, 0, 0, 0, 0, 0, 0}};
 int p = 1; //The current player
-int bestMove;
+int bestMove = 3;
 float moveVals[7] = {0,0,0,0,0,0,0};
 
 int searchDepth = 8;  	//Search depth to use for AI
@@ -262,6 +262,7 @@ int getMove(int p, int mode){
 	switch (mode) {
 	case 'a':
 		c = bestMove;
+		break;
 	case 'r':
 		c = rand()%7;
 		break;
