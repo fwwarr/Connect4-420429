@@ -66,6 +66,10 @@ int main(int argc, char *argv[]){
 		//Not implemented yet
 		printf("Playing in AI mode. Moves will chosen according to a winning strategy.\n\n");
 		break;
+	case 'm':
+		// Mixed mode - player one moves randomly, player two moves using AI
+		printf("Playing in mixed mode. Moves will be chosen randomly for one player, and with AI for another.\n\n");
+		break;
 	default:
 		printf("Playing in console mode. Moves will be read from the console.\n\n");
 		break;
@@ -265,6 +269,10 @@ int getMove(int p, int mode){
 		break;
 	case 'r':
 		c = rand()%7;
+		break;
+	case 'm':
+		if (p == 1) c = rand()%7;
+		else if (p == 2) c = bestMove;
 		break;
 	default:
 		printf("Please enter a move for player %d:", p);
